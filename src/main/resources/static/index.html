@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Dropout Tracking & Follow-Up System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-blue-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold tracking-wide">School Dropout Tracking & Follow-Up System</h1>
+                <p class="text-xs text-blue-200">RNSIT Community Project (SDG 4) • Teacher Intervention Portal</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <label class="text-sm text-blue-100">Attendance Date:</label>
+                <input type="date" id="attendanceDate" class="text-slate-800 px-3 py-1.5 rounded text-sm font-medium" />
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-6 space-y-6">
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-600">
+                <p class="text-xs uppercase font-semibold text-slate-500">Total Students</p>
+                <p id="totalCount" class="text-2xl font-bold text-slate-800 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-emerald-500">
+                <p class="text-xs uppercase font-semibold text-emerald-600">Safe Status</p>
+                <p id="safeCount" class="text-2xl font-bold text-emerald-700 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-amber-500">
+                <p class="text-xs uppercase font-semibold text-amber-600">Warning (75% - 84%)</p>
+                <p id="warningCount" class="text-2xl font-bold text-amber-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-red-600">
+                <p class="text-xs uppercase font-semibold text-red-600">High Dropout Risk</p>
+                <p id="highRiskCount" class="text-2xl font-bold text-red-600 mt-1">0</p>
+            </div>
+        </div>
+
+        <!-- Status Alert Banner -->
+        <div id="statusMessage" class="hidden px-4 py-3 rounded-lg text-sm font-medium"></div>
+
+        <!-- Student Attendance & Risk Table -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <h2 class="text-base font-bold text-slate-800">Classroom Attendance & Automated Risk Monitor</h2>
+                <button onclick="loadStudents()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-medium">
+                    Refresh Data
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase">
+                            <th class="py-3 px-4">Roll No</th>
+                            <th class="py-3 px-4">Student Name</th>
+                            <th class="py-3 px-4">Class</th>
+                            <th class="py-3 px-4">Guardian & Phone</th>
+                            <th class="py-3 px-4">Attendance %</th>
+                            <th class="py-3 px-4">Consecutive Absences</th>
+                            <th class="py-3 px-4">Risk Status</th>
+                            <th class="py-3 px-4 text-center">Mark Attendance</th>
+                            <th class="py-3 px-4 text-center">Parent Follow-Up</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody" class="divide-y divide-slate-200 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Parent Follow-Up Modal -->
+    <div id="followUpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800">Log Parent Follow-Up: <span id="modalStudentName" class="text-blue-700"></span></h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+            </div>
+
+            <input type="hidden" id="modalStudentId" />
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Contact Mode</label>
+                    <select id="contactMode" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                        <option value="PHONE_CALL">Phone Call</option>
+                        <option value="HOME_VISIT">Home Visit</option>
+                        <option value="IN_PERSON">In-Person Meeting</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Primary Absence Reason</label>
+                    <input type="text" id="absenceReason" placeholder="e.g., Health issue, Family migration, Financial difficulty" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Teacher Remarks & Action Plan</label>
+                    <textarea id="remarks" rows="3" placeholder="Enter parent response and counseling notes..." class="w-full border border-slate-300 rounded px-3 py-2 text-sm"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded font-medium">Cancel</button>
+                <button onclick="submitFollowUp()" class="px-4 py-2 text-sm bg-blue-700 hover:bg-blue-800 text-white rounded font-medium">Save Follow-Up</button>
+            </div>
+
+            <!-- Past Follow-Ups List -->
+            <div class="border-t pt-3 mt-4">
+                <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Previous Follow-Up History</h4>
+                <div id="followUpHistory" class="space-y-2 max-h-40 overflow-y-auto text-xs text-slate-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8080/api";
+        document.getElementById("attendanceDate").valueAsDate = new Date();
+
+        function showBanner(msg, isError = false) {
+            const banner = document.getElementById("statusMessage");
+            banner.textContent = msg;
+            banner.className = `px-4 py-3 rounded-lg text-sm font-medium ${isError ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`;
+            banner.classList.remove("hidden");
+            setTimeout(() => banner.classList.add("hidden"), 4000);
+        }
+
+        async function loadStudents() {
+            const res = await fetch(`${API_BASE}/students`);
+            const students = await res.json();
+
+            document.getElementById("totalCount").textContent = students.length;
+            document.getElementById("safeCount").textContent = students.filter(s => s.riskStatus === "SAFE").length;
+            document.getElementById("warningCount").textContent = students.filter(s => s.riskStatus === "WARNING").length;
+            document.getElementById("highRiskCount").textContent = students.filter(s => s.riskStatus === "HIGH_RISK").length;
+
+            const tbody = document.getElementById("studentTableBody");
+            tbody.innerHTML = "";
+
+            students.forEach(s => {
+                const badgeClass = s.riskStatus === "HIGH_RISK"
+                    ? "bg-red-100 text-red-700 border border-red-300"
+                    : s.riskStatus === "WARNING"
+                    ? "bg-amber-100 text-amber-700 border border-amber-300"
+                    : "bg-emerald-100 text-emerald-700 border border-emerald-300";
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 font-semibold">${s.rollNumber}</td>
+                        <td class="py-3 px-4 font-medium text-slate-900">${s.fullName}</td>
+                        <td class="py-3 px-4">${s.classSection}</td>
+                        <td class="py-3 px-4">${s.guardianName} <span class="text-xs text-slate-500 block">${s.guardianPhone}</span></td>
+                        <td class="py-3 px-4 font-bold">${s.attendancePercentage.toFixed(1)}%</td>
+                        <td class="py-3 px-4 font-semibold">${s.consecutiveAbsences} days</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">${s.riskStatus}</span>
+                        </td>
+                        <td class="py-3 px-4 text-center space-x-1">
+                            <button onclick="markAttendance(${s.studentId}, true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs font-medium">Present</button>
+                            <button onclick="markAttendance(${s.studentId}, false)" class="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded text-xs font-medium">Absent</button>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="openModal(${s.studentId}, '${s.fullName}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium">Log / View</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function markAttendance(studentId, isPresent) {
+            const date = document.getElementById("attendanceDate").value;
+            const res = await fetch(`${API_BASE}/attendance/mark?studentId=${studentId}&date=${date}&isPresent=${isPresent}`, {
+                method: "POST"
+            });
+
+            if (res.ok) {
+                showBanner(`Attendance marked (${isPresent ? 'Present' : 'Absent'}) for ${date}!`);
+                loadStudents();
+            } else {
+                showBanner(`Attendance already marked for this student on ${date}. Change the date at the top-right to test another day!`, true);
+            }
+        }
+
+        async function openModal(studentId, fullName) {
+            document.getElementById("modalStudentId").value = studentId;
+            document.getElementById("modalStudentName").textContent = fullName;
+            document.getElementById("followUpModal").classList.remove("hidden");
+            loadFollowUpHistory(studentId);
+        }
+
+        function closeModal() {
+            document.getElementById("followUpModal").classList.add("hidden");
+            document.getElementById("absenceReason").value = "";
+            document.getElementById("remarks").value = "";
+        }
+
+        async function loadFollowUpHistory(studentId) {
+            const container = document.getElementById("followUpHistory");
+            container.innerHTML = "Loading...";
+            const res = await fetch(`${API_BASE}/followup/student/${studentId}`);
+            if (!res.ok) {
+                container.innerHTML = "<p>No records found.</p>";
+                return;
+            }
+            const logs = await res.json();
+            if (logs.length === 0) {
+                container.innerHTML = "<p class='text-slate-400 italic'>No previous follow-ups recorded.</p>";
+                return;
+            }
+            container.innerHTML = logs.map(l => `
+                <div class="p-2 bg-slate-50 border rounded">
+                    <span class="font-bold text-slate-700">${l.followupDate} (${l.contactMode}):</span>
+                    <span class="text-red-600 font-semibold">${l.absenceReason}</span> — ${l.remarks}
+                </div>
+            `).join("");
+        }
+
+        async function submitFollowUp() {
+            const studentId = document.getElementById("modalStudentId").value;
+            const mode = document.getElementById("contactMode").value;
+            const reason = document.getElementById("absenceReason").value;
+            const remarks = document.getElementById("remarks").value;
+
+            if (!reason) {
+                alert("Please enter an absence reason.");
+                return;
+            }
+
+            const params = new URLSearchParams({
+                studentId,
+                teacherId: 1,
+                mode,
+                reason,
+                remarks
+            });
+
+            const res = await fetch(`${API_BASE}/followup/log?${params.toString()}`, {
+                method: "POST"
+            });
+
+            if (res.ok) {
+                showBanner("Parent follow-up recorded successfully!");
+                loadFollowUpHistory(studentId);
+                document.getElementById("absenceReason").value = "";
+                document.getElementById("remarks").value = "";
+            } else {
+                alert("Failed to save follow-up. Make sure Teacher ID 1 exists in MySQL.");
+            }
+        }
+
+        loadStudents();
+    </script>
+</body>
+</html>
