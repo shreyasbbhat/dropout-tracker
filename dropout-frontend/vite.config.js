@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/dropout-frontend/' // Replace with your exact GitHub repository name
+  base: '/dropout-tracker/', // Change this from /dropout-frontend/
 })
